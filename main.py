@@ -70,12 +70,12 @@ async def add_to_wishlist(wanted_item: AddToWishlistIn, user: UserIn = Depends(g
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not save to wishlist.")
 
-    return AddToWishlistOut(**wanted_item.dict(), username=user.username, bought=False)
+    return AddToWishlistOut(**wanted_item.dict(), username=user.username)
 
 
 @app.get("/wishlist/mine", response_model=list[GetWishlistOut])
 async def get_my_wishlist(user: UserIn = Depends(get_current_user)):
-    return await Wishlist.filter(username=user.username).values("username", "item_name", "item_link", "item_price")
+    return await Wishlist.filter(username=user.username).values("username", "item_name", "item_link", "item_price", "want_rating")
 
 
 @app.delete("/wishlist/mine/{item_name}")

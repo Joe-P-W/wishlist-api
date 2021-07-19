@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-from pydantic import BaseModel, constr, condecimal, validator
+from pydantic import BaseModel, constr, condecimal, validator, conint
 from tortoise.contrib.pydantic import pydantic_model_creator
 
 from models.constants import USERNAME_TYPE, PASSWORD_TYPE, ITEM_NAME_MAX_LENGTH, HTTP_LINK_MAX_LENGTH, ITEM_NAME_TYPE
@@ -28,6 +28,7 @@ class AddToWishlistIn(BaseModel):
     item_name: ITEM_NAME_TYPE
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
+    want_rating: Optional[conint(ge=1, le=10)]
 
     @validator("item_link")
     def link_must_be_http_link(cls, url):
@@ -42,7 +43,7 @@ class AddToWishlistOut(BaseModel):
     item_name: ITEM_NAME_TYPE
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
-    bought: bool
+    want_rating: Optional[conint(ge=1, le=10)]
 
 
 class GetWishlistOut(BaseModel):
@@ -50,12 +51,14 @@ class GetWishlistOut(BaseModel):
     item_name: ITEM_NAME_TYPE
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
+    want_rating: Optional[conint(ge=1, le=10)]
 
 
 class UpdateWishlistInfo(BaseModel):
     item_name: Optional[ITEM_NAME_TYPE]
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
+    want_rating: Optional[conint(ge=1, le=10)]
 
     @validator("item_link")
     def link_must_be_http_link(cls, url):

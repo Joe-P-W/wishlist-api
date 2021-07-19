@@ -20,6 +20,7 @@ class Wishlist(Model):
     item_name = fields.CharField(ITEM_NAME_MAX_LENGTH)
     item_link = fields.CharField(HTTP_LINK_MAX_LENGTH, null=True)
     item_price = fields.FloatField(null=True)
+    want_rating = fields.IntField(null=True)
     bought = fields.BooleanField()
 
     class Meta:
