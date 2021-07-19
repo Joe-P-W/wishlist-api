@@ -1,0 +1,9 @@
+fastapi
+pydantic
+tortoise-orm
+passlib
+bcrypt
+python-multipart
+PyJWT
+pytz
+uvicorn
