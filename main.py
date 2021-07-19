@@ -10,8 +10,9 @@ from tortoise.exceptions import IntegrityError
 
 from authentication.handler import authenticate_user, get_current_user
 from authentication.constants import JWT_SECRET, JWT_TIMEOUT_S
-from models.pydantic import UserAPI, CreateUser, CreateUserReturn, GetUserReturn
-from models.tortoise import User
+from models.pydantic import UserAPI, CreateUserIn, CreateUserOut, GetUserOut, AddToWishlistIn, AddToWishlistOut, \
+    GetWishlistOut
+from models.tortoise import User, Wishlist
 
 app = FastAPI()
 register_tortoise(
@@ -41,8 +42,8 @@ async def generate_token(form_data: OAuth2PasswordRequestForm = Depends()):
     return {"access_token": token, "token_type": "bearer"}
 
 
-@app.post("/users/create", response_model=CreateUserReturn)
-async def create_user(user: CreateUser):
+@app.post("/users/create", response_model=CreateUserOut)
+async def create_user(user: CreateUserIn):
     user_object = User(username=user.username, password_hash=bcrypt.hash(user.password))
 
     try:
@@ -52,9 +53,21 @@ async def create_user(user: CreateUser):
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not create user.")
 
-    return CreateUserReturn(username=user.username)
+    return CreateUserOut(username=user.username)
 
 
-@app.get("/users/me", response_model=GetUserReturn)
-async def get_user(user: UserAPI = Depends(get_current_user)):
-    return GetUserReturn(username=user.username)
+@app.post("/wishlist/add", response_model=AddToWishlistOut)
+async def add_to_wishlist(wanted_item: AddToWishlistIn, user: UserAPI = Depends(get_current_user)):
+    wishlist_object = Wishlist(**wanted_item.dict(), username=user.username, bought=False)
+
+    try:
+        await wishlist_object.save()
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not save to wishlist.")
+
+    return AddToWishlistOut(**wanted_item.dict(), username=user.username, bought=False)
+
+
+@app.get("/wishlist/mine", response_model=list[GetWishlistOut])
+async def get_my_wishlist(user: UserAPI = Depends(get_current_user)):
+    return await Wishlist.filter(username=user.username).values("username", "item_name", "item_link", "item_price")
