@@ -21,3 +21,6 @@ class Wishlist(Model):
     item_link = fields.CharField(HTTP_LINK_MAX_LENGTH, null=True)
     item_price = fields.FloatField(null=True)
     bought = fields.BooleanField()
+
+    class Meta:
+        unique_together = ("username", "item_name"),

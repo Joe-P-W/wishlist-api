@@ -1,12 +1,14 @@
+import re
 from typing import Optional
 
-from pydantic import BaseModel, constr, condecimal
+from pydantic import BaseModel, constr, condecimal, validator
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from models.constants import USERNAME_TYPE, PASSWORD_TYPE, ITEM_NAME_MAX_LENGTH, HTTP_LINK_MAX_LENGTH
+from models.constants import USERNAME_TYPE, PASSWORD_TYPE, ITEM_NAME_MAX_LENGTH, HTTP_LINK_MAX_LENGTH, ITEM_NAME_TYPE
+from models.regex import URL_REGEX
 from models.tortoise import User
 
-UserAPI = pydantic_model_creator(User, name="User")
+UserIn = pydantic_model_creator(User, name="User")
 
 
 class CreateUserIn(BaseModel):
@@ -23,14 +25,21 @@ class GetUserOut(BaseModel):
 
 
 class AddToWishlistIn(BaseModel):
-    item_name: constr(min_length=3, max_length=ITEM_NAME_MAX_LENGTH)
+    item_name: ITEM_NAME_TYPE
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
+
+    @validator("item_link")
+    def link_must_be_http_link(cls, url):
+        if not re.fullmatch(URL_REGEX, url):
+            raise ValueError("url doesn't match url regex")
+
+        return url
 
 
 class AddToWishlistOut(BaseModel):
     username: USERNAME_TYPE
-    item_name: constr(min_length=3, max_length=ITEM_NAME_MAX_LENGTH)
+    item_name: ITEM_NAME_TYPE
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
     bought: bool
@@ -38,6 +47,24 @@ class AddToWishlistOut(BaseModel):
 
 class GetWishlistOut(BaseModel):
     username: USERNAME_TYPE
-    item_name: constr(min_length=3, max_length=ITEM_NAME_MAX_LENGTH)
+    item_name: ITEM_NAME_TYPE
     item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
     item_price: Optional[condecimal(decimal_places=2)]
+
+
+class UpdateWishlistInfo(BaseModel):
+    item_name: Optional[ITEM_NAME_TYPE]
+    item_link: Optional[constr(max_length=HTTP_LINK_MAX_LENGTH)]
+    item_price: Optional[condecimal(decimal_places=2)]
+
+    @validator("item_link")
+    def link_must_be_http_link(cls, url):
+        if not re.fullmatch(URL_REGEX, url):
+            raise ValueError("url doesn't match url regex")
+
+        return url
+
+
+class PatchWishlistIn(BaseModel):
+    item_name: ITEM_NAME_TYPE
+    update_info: UpdateWishlistInfo
