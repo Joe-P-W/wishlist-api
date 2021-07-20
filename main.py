@@ -8,10 +8,10 @@ from passlib.hash import bcrypt
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.exceptions import IntegrityError
 
-from authentication.handler import authenticate_user, get_current_user
 from authentication.constants import JWT_SECRET, JWT_TIMEOUT_S
+from authentication.handler import authenticate_user, get_current_user
 from models.constants import ITEM_NAME_TYPE
-from models.pydantic import UserIn, CreateUserIn, CreateUserOut, GetUserOut, AddToWishlistIn, AddToWishlistOut, \
+from models.pydantic import UserIn, CreateUserIn, CreateUserOut, AddToWishlistIn, AddToWishlistOut, \
     GetWishlistOut, PatchWishlistIn
 from models.tortoise import User, Wishlist
 
@@ -89,4 +89,3 @@ async def delete_from_my_wishlist(item_name: ITEM_NAME_TYPE, user: UserIn = Depe
 async def update_wishlist_item(item: PatchWishlistIn, user: UserIn = Depends(get_current_user)):
     update_info = item.update_info.dict(exclude_none=True)
     await Wishlist.filter(username=user.username, item_name=item.item_name).update(**update_info)
-

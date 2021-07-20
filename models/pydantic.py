@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, constr, condecimal, validator, conint
 from tortoise.contrib.pydantic import pydantic_model_creator
 
-from models.constants import USERNAME_TYPE, PASSWORD_TYPE, ITEM_NAME_MAX_LENGTH, HTTP_LINK_MAX_LENGTH, ITEM_NAME_TYPE
+from models.constants import USERNAME_TYPE, PASSWORD_TYPE, HTTP_LINK_MAX_LENGTH, ITEM_NAME_TYPE
 from models.regex import URL_REGEX
 from models.tortoise import User
 
