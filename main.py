@@ -75,7 +75,9 @@ async def add_to_wishlist(wanted_item: AddToWishlistIn, user: UserIn = Depends(g
 
 @app.get("/wishlist/mine", response_model=list[GetWishlistOut])
 async def get_my_wishlist(user: UserIn = Depends(get_current_user)):
-    return await Wishlist.filter(username=user.username).values("username", "item_name", "item_link", "item_price", "want_rating")
+    return await Wishlist.filter(username=user.username).values(
+        "username", "item_name", "item_link", "item_price", "want_rating"
+    )
 
 
 @app.delete("/wishlist/mine/{item_name}")
