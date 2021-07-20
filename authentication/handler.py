@@ -7,14 +7,13 @@ from fastapi.security import OAuth2PasswordBearer
 from tortoise.exceptions import DoesNotExist
 
 from authentication.constants import JWT_SECRET, JWT_TIMEOUT_S
-from models.pydantic import UserAPI
+from models.pydantic import UserIn
 from models.tortoise import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="authenticate")
 
 
 async def authenticate_user(username: str, password: str):
-
     try:
         user = await User.get(username=username)
     except DoesNotExist:
@@ -39,4 +38,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if authenticated_time + timedelta(seconds=JWT_TIMEOUT_S) < datetime.now(pytz.utc):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has timed out")
 
-    return await UserAPI.from_tortoise_orm(user_object)
+    return await UserIn.from_tortoise_orm(user_object)
