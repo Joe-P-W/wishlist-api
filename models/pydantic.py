@@ -71,3 +71,16 @@ class UpdateWishlistInfo(BaseModel):
 class PatchWishlistIn(BaseModel):
     item_name: ITEM_NAME_TYPE
     update_info: UpdateWishlistInfo
+
+
+class GetMakeFriendTokenOut(BaseModel):
+    token: str
+
+
+class PostMakeFriendIn(BaseModel):
+    token: str
+
+
+class PostMakeFriendsOut(BaseModel):
+    username: USERNAME_TYPE
+    friend: USERNAME_TYPE

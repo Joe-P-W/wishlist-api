@@ -1,7 +1,12 @@
+import secrets
+from binascii import b2a_base64
 from datetime import datetime
 
+import aioredis
 import jwt
 import pytz
+import uvicorn
+from aioredis import Redis
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from passlib.hash import bcrypt
@@ -10,10 +15,13 @@ from tortoise.exceptions import IntegrityError
 
 from authentication.constants import JWT_SECRET, JWT_TIMEOUT_S
 from authentication.handler import authenticate_user, get_current_user
+from friends.constants import FRIEND_TOKEN_TTL
 from models.constants import ITEM_NAME_TYPE
-from models.pydantic import UserIn, CreateUserIn, CreateUserOut, AddToWishlistIn, AddToWishlistOut, \
-    GetWishlistOut, PatchWishlistIn
-from models.tortoise import User, Wishlist
+from models.pydantic import (
+    UserIn, CreateUserIn, CreateUserOut, AddToWishlistIn, AddToWishlistOut, GetWishlistOut, PatchWishlistIn,
+    GetMakeFriendTokenOut, PostMakeFriendIn, PostMakeFriendsOut
+)
+from models.tortoise import User, Wishlist, Friends
 
 app = FastAPI()
 register_tortoise(
@@ -23,6 +31,17 @@ register_tortoise(
     generate_schemas=True,
     add_exception_handlers=True
 )
+
+redis: Redis
+
+
+@app.on_event("startup")
+async def startup_event():
+    global redis
+
+    redis = aioredis.from_url(
+        "redis://localhost", encoding="utf-8", decode_responses=True,
+    )
 
 
 @app.post("/authenticate")
@@ -89,3 +108,47 @@ async def delete_from_my_wishlist(item_name: ITEM_NAME_TYPE, user: UserIn = Depe
 async def update_wishlist_item(item: PatchWishlistIn, user: UserIn = Depends(get_current_user)):
     update_info = item.update_info.dict(exclude_none=True)
     await Wishlist.filter(username=user.username, item_name=item.item_name).update(**update_info)
+
+
+@app.get("/friends/make_token", response_model=GetMakeFriendTokenOut)
+async def make_token(user: UserIn = Depends(get_current_user)):
+    global redis
+
+    token = b2a_base64(bytes.fromhex(secrets.token_hex(12))).decode().strip("\n")
+    await redis.set(token, user.username, ex=FRIEND_TOKEN_TTL)
+
+    return GetMakeFriendTokenOut(token=token)
+
+
+@app.post("/friends/make_friend", response_model=PostMakeFriendsOut)
+async def make_friend(friend_token: PostMakeFriendIn, user: UserIn = Depends(get_current_user)):
+    global redis
+
+    friend = await redis.get(friend_token.token)
+
+    if friend is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No such code"
+        )
+    if friend == user.username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="You can't make friends with yourself"
+        )
+
+    try:
+        await Friends(username=user.username, friend=friend).save()
+    except IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"You and {friend} are already friends"
+        )
+
+    return PostMakeFriendsOut(username=user.username, friend=friend)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await redis.close()
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="localhost", port=8000, reload=True, debug=True)
