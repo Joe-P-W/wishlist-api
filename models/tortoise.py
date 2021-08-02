@@ -24,4 +24,13 @@ class Wishlist(Model):
     bought = fields.BooleanField()
 
     class Meta:
-        unique_together = ("username", "item_name"),
+        unique_together = (("username", "item_name"), )
+
+
+class Friends(Model):
+    id = fields.IntField(pk=True)
+    username = fields.CharField(USERNAME_MAX_LENGTH)
+    friend = fields.CharField(USERNAME_MAX_LENGTH)
+
+    class Meta:
+        unique_together = (("username", "friend"), )
